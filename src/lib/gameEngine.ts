@@ -9,6 +9,18 @@ export interface SystemStats {
   voltageStability: number;
 }
 
+export interface FailureCheck {
+  hasFailed: boolean;
+  failureType?: 'electrical_overload' | 'voltage_drop' | 'structural_failure';
+  description?: string;
+  splAtFailure?: number;
+}
+
+export interface GlassBreakCheck {
+  glassBroke: boolean;
+  finalSPL: number;
+}
+
 export class GameEngine {
   static calculateSPL(
     installedEquipment: Array<InstalledEquipment & { equipment: Equipment }>,
@@ -142,5 +154,51 @@ export class GameEngine {
       z - halfDepth >= 0 &&
       z + halfDepth <= vehicle.trunk_depth
     );
+  }
+
+  static checkForFailure(
+    systemStats: SystemStats,
+    userVehicle: UserVehicle
+  ): FailureCheck {
+    if (systemStats.totalPowerDraw > systemStats.availablePower * 1.5) {
+      return {
+        hasFailed: true,
+        failureType: 'electrical_overload',
+        description: 'Catastrophic electrical overload! The alternator couldn\'t handle the power draw and started smoking.',
+        splAtFailure: systemStats.estimatedSPL * 0.7
+      };
+    }
+
+    if (systemStats.electricalEfficiency < 10) {
+      return {
+        hasFailed: true,
+        failureType: 'voltage_drop',
+        description: 'Severe voltage drop detected! The system shut down to prevent damage.',
+        splAtFailure: systemStats.estimatedSPL * 0.5
+      };
+    }
+
+    if (systemStats.totalRMS > userVehicle.battery_capacity * 50) {
+      return {
+        hasFailed: true,
+        failureType: 'structural_failure',
+        description: 'The bass was too powerful! Something in the electrical system gave out.',
+        splAtFailure: systemStats.estimatedSPL * 0.8
+      };
+    }
+
+    return { hasFailed: false };
+  }
+
+  static checkGlassBreak(spl: number, systemStats: SystemStats): GlassBreakCheck {
+    const glassBreakThreshold = 115;
+    const hasMaxUpgrades = systemStats.totalRMS > 5000 && systemStats.electricalEfficiency > 70;
+
+    const glassBroke = spl >= glassBreakThreshold && hasMaxUpgrades;
+
+    return {
+      glassBroke,
+      finalSPL: spl
+    };
   }
 }

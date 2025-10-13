@@ -68,4 +68,20 @@
   .animate-bounce {
     animation: bounce 1s infinite;
   }
+
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0) translateY(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+      transform: translateX(-2px) translateY(-1px);
+    }
+    20%, 40%, 60%, 80% {
+      transform: translateX(2px) translateY(1px);
+    }
+  }
+
+  .animate-shake {
+    animation: shake 0.15s ease-in-out infinite;
+  }
 }

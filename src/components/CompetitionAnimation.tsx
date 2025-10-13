@@ -1,20 +1,28 @@
 import { useEffect, useState } from 'react';
 import SPLMeter from './SPLMeter';
+import VehicleVisualization from './VehicleVisualization';
 import { Trophy, Users, Zap } from 'lucide-react';
+import { Vehicle, InstalledEquipment, Equipment } from '../lib/supabase';
 
 interface CompetitionAnimationProps {
   categoryName: string;
   userSPL: number;
   username: string;
+  vehicle: Vehicle;
+  installedEquipment: Array<InstalledEquipment & { equipment: Equipment }>;
+  glassShattered: boolean;
   onComplete: () => void;
 }
 
-type AnimationStage = 'intro' | 'prep' | 'measuring' | 'complete';
+type AnimationStage = 'intro' | 'prep' | 'measuring' | 'shaking' | 'complete';
 
 export default function CompetitionAnimation({
   categoryName,
   userSPL,
   username,
+  vehicle,
+  installedEquipment,
+  glassShattered,
   onComplete,
 }: CompetitionAnimationProps) {
   const [stage, setStage] = useState<AnimationStage>('intro');
@@ -45,9 +53,19 @@ export default function CompetitionAnimation({
   useEffect(() => {
     if (stage === 'measuring') {
       const timer = setTimeout(() => {
+        setStage('shaking');
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [stage]);
+
+  useEffect(() => {
+    if (stage === 'shaking') {
+      const timer = setTimeout(() => {
         setStage('complete');
         setTimeout(onComplete, 1500);
-      }, 2500);
+      }, 2000);
 
       return () => clearTimeout(timer);
     }
@@ -133,6 +151,41 @@ export default function CompetitionAnimation({
               <div className="bg-slate-800/50 rounded-lg p-4 border border-red-500/30">
                 <div className="text-red-400 text-sm font-semibold mb-1">Duration</div>
                 <div className="text-2xl font-bold text-white">BURST</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {stage === 'shaking' && (
+          <div className="text-center animate-fade-in">
+            <div className="mb-8">
+              <h2 className="text-4xl font-bold text-white mb-4 animate-pulse">
+                {glassShattered ? '💥 GLASS SHATTERED! 💥' : 'MAXIMUM BASS!'}
+              </h2>
+              <p className="text-xl text-gray-400 mb-6">
+                {glassShattered
+                  ? 'LEGENDARY ACHIEVEMENT UNLOCKED!'
+                  : 'The entire vehicle is shaking!'}
+              </p>
+            </div>
+
+            <div className="max-w-md mx-auto">
+              <VehicleVisualization
+                vehicle={vehicle}
+                highlightTrunk={true}
+                isShaking={true}
+                glassShattered={glassShattered}
+                installedEquipment={installedEquipment}
+                openView={true}
+              />
+            </div>
+
+            <div className="mt-6 text-center">
+              <div className="text-6xl font-bold text-yellow-400 animate-pulse">
+                {userSPL.toFixed(1)} dB
+              </div>
+              <div className="text-sm text-gray-400 mt-2">
+                Peak Sound Pressure Level
               </div>
             </div>
           </div>
