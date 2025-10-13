@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { UserProfile } from '../lib/supabase';
-import { Wrench, ShoppingCart, Trophy, LogOut } from 'lucide-react';
+import { Wrench, ShoppingCart, Trophy, LogOut, BarChart3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Garage from './Garage';
 import Shop from './Shop';
 import Competition from './Competition';
+import BuildStats from './BuildStats';
 
 interface MainGameProps {
   profile: UserProfile;
   onProfileUpdate: (profile: UserProfile) => void;
 }
 
-type View = 'garage' | 'shop' | 'competition';
+type View = 'garage' | 'shop' | 'competition' | 'stats';
 
 export default function MainGame({ profile, onProfileUpdate }: MainGameProps) {
   const [currentView, setCurrentView] = useState<View>('garage');
@@ -61,6 +62,17 @@ export default function MainGame({ profile, onProfileUpdate }: MainGameProps) {
                   <Trophy className="w-5 h-5" />
                   <span>Compete</span>
                 </button>
+                <button
+                  onClick={() => setCurrentView('stats')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                    currentView === 'stats'
+                      ? 'bg-cyan-600 text-white'
+                      : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+                  }`}
+                >
+                  <BarChart3 className="w-5 h-5" />
+                  <span>Stats</span>
+                </button>
               </nav>
             </div>
 
@@ -98,6 +110,11 @@ export default function MainGame({ profile, onProfileUpdate }: MainGameProps) {
         )}
         {currentView === 'competition' && (
           <Competition profile={profile} onProfileUpdate={onProfileUpdate} />
+        )}
+        {currentView === 'stats' && (
+          <div className="max-w-4xl mx-auto p-6">
+            <BuildStats profile={profile} />
+          </div>
         )}
       </main>
     </div>

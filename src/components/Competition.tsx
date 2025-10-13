@@ -3,6 +3,7 @@ import { supabase, UserProfile, CompetitionCategory, UserVehicle, Vehicle, Insta
 import { GameEngine } from '../lib/gameEngine';
 import { Trophy, Zap, DollarSign, Medal, Target } from 'lucide-react';
 import CompetitionAnimation from './CompetitionAnimation';
+import VehicleVisualization from './VehicleVisualization';
 
 interface CompetitionProps {
   profile: UserProfile;
@@ -261,17 +262,40 @@ export default function Competition({ profile, onProfileUpdate }: CompetitionPro
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h2 className="text-3xl font-bold text-white mb-2">SPL Competition</h2>
-      <p className="text-gray-400 mb-6">
-        Your Current SPL: <span className="text-yellow-400 font-bold text-xl">{userSPL.toFixed(1)} dB</span>
-      </p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2">
+          <h2 className="text-3xl font-bold text-white mb-2">SPL Competition</h2>
+          <p className="text-gray-400 mb-4">
+            Your Current SPL: <span className="text-yellow-400 font-bold text-xl">{userSPL.toFixed(1)} dB</span>
+          </p>
 
-      {installedEquipment.length === 0 && (
-        <div className="bg-yellow-900/30 border border-yellow-700 text-yellow-200 px-6 py-4 rounded-lg mb-6">
-          <p className="font-semibold mb-2">No Equipment Installed</p>
-          <p>Visit the shop and garage to build your audio system before competing!</p>
+          {installedEquipment.length === 0 && (
+            <div className="bg-yellow-900/30 border border-yellow-700 text-yellow-200 px-6 py-4 rounded-lg">
+              <p className="font-semibold mb-2">No Equipment Installed</p>
+              <p>Visit the shop and garage to build your audio system before competing!</p>
+            </div>
+          )}
         </div>
-      )}
+
+        {vehicle && (
+          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h3 className="text-lg font-bold text-white mb-3">Your Build</h3>
+            <VehicleVisualization vehicle={vehicle} highlightTrunk={true} showStats={false} />
+            <div className="mt-3 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Equipment:</span>
+                <span className="text-cyan-400">{installedEquipment.length} items</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Total Power:</span>
+                <span className="text-yellow-400">
+                  {userVehicle && vehicle ? GameEngine.calculateSystemStats(installedEquipment, userVehicle, vehicle).totalRMS : 0}W
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {categories.map((category) => {

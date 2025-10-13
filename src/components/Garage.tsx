@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase, UserProfile, UserVehicle, Vehicle, InstalledEquipment, Equipment } from '../lib/supabase';
 import { GameEngine, SystemStats } from '../lib/gameEngine';
-import { Gauge, Battery, Zap, Volume2, Trash2, RotateCw, Eye } from 'lucide-react';
+import { Gauge, Battery, Zap, Volume2, Trash2, RotateCw, Eye, Save } from 'lucide-react';
 import Trunk3D from './Trunk3D';
+import VehicleVisualization from './VehicleVisualization';
+import InstallationAnimation from './InstallationAnimation';
 
 interface GarageProps {
   profile: UserProfile;
@@ -20,6 +22,9 @@ export default function Garage({ profile, onProfileUpdate }: GarageProps) {
   const [draggedItem, setDraggedItem] = useState<EquipmentWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [view3D, setView3D] = useState(true);
+  const [pendingChanges, setPendingChanges] = useState<Array<{ name: string; type: 'equipment' | 'electrical' }>>([]);
+  const [showInstallAnimation, setShowInstallAnimation] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     loadGarage();
@@ -197,6 +202,8 @@ export default function Garage({ profile, onProfileUpdate }: GarageProps) {
 
     if (!profileError) {
       onProfileUpdate({ ...profile, cash: newCash });
+      setPendingChanges(prev => [...prev, { name: `+${upgrade}A Alternator`, type: 'electrical' }]);
+      setHasUnsavedChanges(true);
       await loadGarage();
     }
   };
@@ -229,8 +236,22 @@ export default function Garage({ profile, onProfileUpdate }: GarageProps) {
 
     if (!profileError) {
       onProfileUpdate({ ...profile, cash: newCash });
+      setPendingChanges(prev => [...prev, { name: `+${upgrade}Ah Battery`, type: 'electrical' }]);
+      setHasUnsavedChanges(true);
       await loadGarage();
     }
+  };
+
+  const handleSaveChanges = () => {
+    if (pendingChanges.length > 0) {
+      setShowInstallAnimation(true);
+    }
+  };
+
+  const handleInstallationComplete = () => {
+    setShowInstallAnimation(false);
+    setPendingChanges([]);
+    setHasUnsavedChanges(false);
   };
 
   if (loading || !vehicle || !userVehicle) {
@@ -245,7 +266,29 @@ export default function Garage({ profile, onProfileUpdate }: GarageProps) {
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-      <h2 className="text-3xl font-bold text-white mb-6">Your Garage - {vehicle.name}</h2>
+      {showInstallAnimation && (
+        <InstallationAnimation
+          items={pendingChanges}
+          onComplete={handleInstallationComplete}
+        />
+      )}
+
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-3xl font-bold text-white">Your Garage - {vehicle.name}</h2>
+        {hasUnsavedChanges && (
+          <button
+            onClick={handleSaveChanges}
+            className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors animate-pulse"
+          >
+            <Save className="w-5 h-5" />
+            <span>Save & Install Changes</span>
+          </button>
+        )}
+      </div>
+
+      <div className="mb-6">
+        <VehicleVisualization vehicle={vehicle} highlightTrunk={true} showStats={false} />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
