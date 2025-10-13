@@ -14,7 +14,7 @@ interface CompetitionAnimationProps {
   onComplete: () => void;
 }
 
-type AnimationStage = 'intro' | 'prep' | 'measuring' | 'shaking' | 'complete';
+type AnimationStage = 'intro' | 'prep' | 'measuring' | 'complete';
 
 export default function CompetitionAnimation({
   categoryName,
@@ -27,6 +27,7 @@ export default function CompetitionAnimation({
 }: CompetitionAnimationProps) {
   const [stage, setStage] = useState<AnimationStage>('intro');
   const [countdown, setCountdown] = useState(3);
+  const [showGlassShatter, setShowGlassShatter] = useState(false);
 
   useEffect(() => {
     const timer1 = setTimeout(() => setStage('prep'), 1500);
@@ -52,24 +53,20 @@ export default function CompetitionAnimation({
 
   useEffect(() => {
     if (stage === 'measuring') {
-      const timer = setTimeout(() => {
-        setStage('shaking');
-      }, 2000);
+      if (glassShattered) {
+        const glassTimer = setTimeout(() => {
+          setShowGlassShatter(true);
+        }, 3500);
+      }
 
-      return () => clearTimeout(timer);
-    }
-  }, [stage]);
-
-  useEffect(() => {
-    if (stage === 'shaking') {
       const timer = setTimeout(() => {
         setStage('complete');
         setTimeout(onComplete, 1500);
-      }, 2000);
+      }, 5000);
 
       return () => clearTimeout(timer);
     }
-  }, [stage, onComplete]);
+  }, [stage, onComplete, glassShattered]);
 
   return (
     <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -117,75 +114,105 @@ export default function CompetitionAnimation({
         )}
 
         {stage === 'measuring' && (
-          <div className="text-center animate-fade-in">
-            <div className="mb-8">
-              <Zap className="w-20 h-20 text-yellow-400 mx-auto mb-4 animate-pulse" />
-              <h2 className="text-4xl font-bold text-white mb-2">MEASURING SPL</h2>
-              <p className="text-xl text-gray-400">System at full power...</p>
+          <div className="animate-fade-in">
+            <div className="text-center mb-6">
+              <Zap className="w-16 h-16 text-yellow-400 mx-auto mb-3 animate-pulse" />
+              <h2 className="text-3xl font-bold text-white mb-2">MEASURING SPL</h2>
+              <p className="text-lg text-gray-400">System at full power...</p>
             </div>
 
-            <div className="relative mb-8">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-96 h-96 bg-cyan-500/10 rounded-full animate-ping"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-full h-full bg-cyan-500/5 rounded-full animate-ping"></div>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-4/5 h-4/5 bg-yellow-500/5 rounded-full animate-ping" style={{ animationDelay: '0.3s' }}></div>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-3/5 h-3/5 bg-red-500/5 rounded-full animate-ping" style={{ animationDelay: '0.6s' }}></div>
+                </div>
+
+                <div className="relative z-10 bg-slate-900/50 rounded-xl p-6 border-2 border-slate-700">
+                  <h3 className="text-lg font-bold text-white mb-4 text-center">SPL Reading</h3>
+                  <SPLMeter targetSPL={userSPL} duration={4500} showReading={true} />
+                  <div className="mt-4 text-center">
+                    <div className="text-4xl font-bold text-yellow-400 animate-pulse">
+                      {userSPL.toFixed(1)} dB
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">Target Level</div>
+                  </div>
+                </div>
               </div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-80 h-80 bg-yellow-500/10 rounded-full animate-ping" style={{ animationDelay: '0.3s' }}></div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-64 h-64 bg-red-500/10 rounded-full animate-ping" style={{ animationDelay: '0.6s' }}></div>
-              </div>
-              <div className="relative z-10">
-                <SPLMeter targetSPL={userSPL} duration={2000} showReading={true} />
+
+              <div className="relative">
+                <div className="bg-slate-900/50 rounded-xl p-6 border-2 border-slate-700">
+                  <h3 className="text-lg font-bold text-white mb-4 text-center">
+                    {showGlassShatter ? '💥 GLASS BREAKING! 💥' : 'Vehicle System'}
+                  </h3>
+                  <div className="max-w-md mx-auto">
+                    <VehicleVisualization
+                      vehicle={vehicle}
+                      highlightTrunk={true}
+                      isShaking={true}
+                      glassShattered={showGlassShatter}
+                      installedEquipment={installedEquipment}
+                      openView={true}
+                    />
+                  </div>
+                  {showGlassShatter && (
+                    <div className="mt-4 text-center">
+                      <div className="text-2xl font-bold text-yellow-400 animate-pulse">
+                        LEGENDARY ACHIEVEMENT!
+                      </div>
+                      <div className="text-sm text-gray-400 mt-1">
+                        Windows shattered from pure bass power
+                      </div>
+                    </div>
+                  )}
+                  {!showGlassShatter && (
+                    <div className="mt-4 text-center">
+                      <div className="text-sm text-cyan-400 font-semibold">
+                        Entire vehicle vibrating
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        Equipment visible in trunk
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
-              <div className="bg-slate-800/50 rounded-lg p-4 border border-cyan-500/30">
+            <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto">
+              <div className="bg-slate-800/50 rounded-lg p-4 border border-cyan-500/30 animate-pulse">
                 <div className="text-cyan-400 text-sm font-semibold mb-1">Power Draw</div>
                 <div className="text-2xl font-bold text-white">MAX</div>
               </div>
-              <div className="bg-slate-800/50 rounded-lg p-4 border border-yellow-500/30">
+              <div className="bg-slate-800/50 rounded-lg p-4 border border-yellow-500/30 animate-pulse" style={{ animationDelay: '0.2s' }}>
                 <div className="text-yellow-400 text-sm font-semibold mb-1">Frequency</div>
                 <div className="text-2xl font-bold text-white">30Hz</div>
               </div>
-              <div className="bg-slate-800/50 rounded-lg p-4 border border-red-500/30">
+              <div className="bg-slate-800/50 rounded-lg p-4 border border-red-500/30 animate-pulse" style={{ animationDelay: '0.4s' }}>
                 <div className="text-red-400 text-sm font-semibold mb-1">Duration</div>
                 <div className="text-2xl font-bold text-white">BURST</div>
               </div>
             </div>
-          </div>
-        )}
 
-        {stage === 'shaking' && (
-          <div className="text-center animate-fade-in">
-            <div className="mb-8">
-              <h2 className="text-4xl font-bold text-white mb-4 animate-pulse">
-                {glassShattered ? '💥 GLASS SHATTERED! 💥' : 'MAXIMUM BASS!'}
-              </h2>
-              <p className="text-xl text-gray-400 mb-6">
-                {glassShattered
-                  ? 'LEGENDARY ACHIEVEMENT UNLOCKED!'
-                  : 'The entire vehicle is shaking!'}
-              </p>
-            </div>
-
-            <div className="max-w-md mx-auto">
-              <VehicleVisualization
-                vehicle={vehicle}
-                highlightTrunk={true}
-                isShaking={true}
-                glassShattered={glassShattered}
-                installedEquipment={installedEquipment}
-                openView={true}
-              />
-            </div>
-
-            <div className="mt-6 text-center">
-              <div className="text-6xl font-bold text-yellow-400 animate-pulse">
-                {userSPL.toFixed(1)} dB
-              </div>
-              <div className="text-sm text-gray-400 mt-2">
-                Peak Sound Pressure Level
+            <div className="mt-4 text-center">
+              <div className="inline-flex items-center space-x-2 text-sm text-gray-400">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div
+                    key={i}
+                    className="w-2 h-6 bg-yellow-400 rounded"
+                    style={{
+                      animation: 'pulse 0.8s ease-in-out infinite',
+                      animationDelay: `${i * 0.1}s`,
+                      opacity: 0.4 + (Math.random() * 0.6)
+                    }}
+                  />
+                ))}
+                <span className="ml-2">Measuring sound waves...</span>
               </div>
             </div>
           </div>
