@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase, Equipment, EquipmentCategory, UserProfile, UserVehicle, InstalledEquipment } from '../lib/supabase';
 import { Filter, Search, Zap, Volume2, Radio, Battery, Lightbulb, Shield } from 'lucide-react';
+import Equipment3D from './Equipment3D';
 
 interface ShopProps {
   profile: UserProfile;
@@ -199,10 +200,14 @@ export default function Shop({ profile, onProfileUpdate }: ShopProps) {
           return (
             <div
               key={item.id}
-              className={`bg-slate-800 rounded-lg p-4 border transition-all ${
+              className={`bg-slate-800 rounded-lg p-4 border transition-all hover:scale-105 ${
                 owned ? 'border-green-500' : 'border-slate-700'
               }`}
             >
+              <div className="mb-3 h-32 flex items-center justify-center bg-slate-900 rounded-lg">
+                <Equipment3D equipment={item} />
+              </div>
+
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="text-lg font-bold text-white">{item.name}</h3>

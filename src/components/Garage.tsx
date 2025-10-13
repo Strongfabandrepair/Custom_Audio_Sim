@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase, UserProfile, UserVehicle, Vehicle, InstalledEquipment, Equipment } from '../lib/supabase';
 import { GameEngine, SystemStats } from '../lib/gameEngine';
-import { Gauge, Battery, Zap, Volume2, Trash2, RotateCw } from 'lucide-react';
+import { Gauge, Battery, Zap, Volume2, Trash2, RotateCw, Eye } from 'lucide-react';
+import Trunk3D from './Trunk3D';
 
 interface GarageProps {
   profile: UserProfile;
@@ -18,6 +19,7 @@ export default function Garage({ profile, onProfileUpdate }: GarageProps) {
   const [selectedEquipment, setSelectedEquipment] = useState<string | null>(null);
   const [draggedItem, setDraggedItem] = useState<EquipmentWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [view3D, setView3D] = useState(true);
 
   useEffect(() => {
     loadGarage();
@@ -292,46 +294,68 @@ export default function Garage({ profile, onProfileUpdate }: GarageProps) {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-            <h3 className="text-xl font-bold text-white mb-4">Trunk Space</h3>
-            <div
-              className="relative bg-slate-900 border-2 border-slate-600 rounded-lg overflow-hidden"
-              style={{ height: `${vehicle.trunk_height * scale}px` }}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 opacity-20">
-                {Array.from({ length: 100 }).map((_, i) => (
-                  <div key={i} className="border border-slate-700"></div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">Trunk Space</h3>
+              <button
+                onClick={() => setView3D(!view3D)}
+                className="flex items-center space-x-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+              >
+                <Eye className="w-4 h-4" />
+                <span>{view3D ? '2D View' : '3D View'}</span>
+              </button>
+            </div>
+
+            {view3D ? (
+              <div onDragOver={handleDragOver} onDrop={handleDrop}>
+                <Trunk3D
+                  vehicle={vehicle}
+                  installedEquipment={installedEquipment}
+                  selectedEquipment={selectedEquipment}
+                  onSelectEquipment={(id) => setSelectedEquipment(selectedEquipment === id ? null : id)}
+                  onDragStart={handleDragStart}
+                />
+              </div>
+            ) : (
+              <div
+                className="relative bg-slate-900 border-2 border-slate-600 rounded-lg overflow-hidden"
+                style={{ height: `${vehicle.trunk_height * scale}px` }}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
+                <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 opacity-20">
+                  {Array.from({ length: 100 }).map((_, i) => (
+                    <div key={i} className="border border-slate-700"></div>
+                  ))}
+                </div>
+
+                {installedEquipment.map((item) => (
+                  <div
+                    key={item.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, item)}
+                    onClick={() => setSelectedEquipment(selectedEquipment === item.id ? null : item.id)}
+                    className={`absolute cursor-move transition-all ${
+                      selectedEquipment === item.id
+                        ? 'ring-2 ring-cyan-500 z-10'
+                        : 'hover:ring-2 hover:ring-cyan-400'
+                    }`}
+                    style={{
+                      left: `${(item.position_x / vehicle.trunk_width) * 100}%`,
+                      top: `${(item.position_y / vehicle.trunk_height) * 100}%`,
+                      width: `${item.equipment.size_width * scale}px`,
+                      height: `${item.equipment.size_height * scale}px`,
+                      transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
+                      backgroundColor: 'rgba(6, 182, 212, 0.3)',
+                      border: '2px solid rgb(6, 182, 212)',
+                    }}
+                  >
+                    <div className="text-xs text-white p-1 truncate">
+                      {item.equipment.name}
+                    </div>
+                  </div>
                 ))}
               </div>
-
-              {installedEquipment.map((item) => (
-                <div
-                  key={item.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, item)}
-                  onClick={() => setSelectedEquipment(selectedEquipment === item.id ? null : item.id)}
-                  className={`absolute cursor-move transition-all ${
-                    selectedEquipment === item.id
-                      ? 'ring-2 ring-cyan-500 z-10'
-                      : 'hover:ring-2 hover:ring-cyan-400'
-                  }`}
-                  style={{
-                    left: `${(item.position_x / vehicle.trunk_width) * 100}%`,
-                    top: `${(item.position_y / vehicle.trunk_height) * 100}%`,
-                    width: `${item.equipment.size_width * scale}px`,
-                    height: `${item.equipment.size_height * scale}px`,
-                    transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
-                    backgroundColor: 'rgba(6, 182, 212, 0.3)',
-                    border: '2px solid rgb(6, 182, 212)',
-                  }}
-                >
-                  <div className="text-xs text-white p-1 truncate">
-                    {item.equipment.name}
-                  </div>
-                </div>
-              ))}
-            </div>
+            )}
             <p className="text-sm text-gray-400 mt-2">
               Drag and drop equipment to reposition. Click to select.
             </p>

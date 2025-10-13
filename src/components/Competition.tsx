@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase, UserProfile, CompetitionCategory, UserVehicle, Vehicle, InstalledEquipment, Equipment } from '../lib/supabase';
 import { GameEngine } from '../lib/gameEngine';
 import { Trophy, Zap, DollarSign, Medal, Target } from 'lucide-react';
+import CompetitionAnimation from './CompetitionAnimation';
 
 interface CompetitionProps {
   profile: UserProfile;
@@ -99,33 +100,35 @@ export default function Competition({ profile, onProfileUpdate }: CompetitionPro
 
     setCompeting(true);
     setSelectedCategory(category);
+  };
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
+  const handleAnimationComplete = async () => {
+    if (!selectedCategory || !userVehicle || !vehicle) return;
 
-    const aiCompetitors = GameEngine.generateAICompetitors(category.difficulty, 5);
+    const aiCompetitors = GameEngine.generateAICompetitors(selectedCategory.difficulty, 5);
     const allScores = [...aiCompetitors, { name: profile.username, spl: userSPL }];
     allScores.sort((a, b) => b.spl - a.spl);
 
     const userRank = allScores.findIndex(s => s.name === profile.username) + 1;
 
     const prizes = [
-      category.prize_money,
-      Math.floor(category.prize_money * 0.6),
-      Math.floor(category.prize_money * 0.3),
+      selectedCategory.prize_money,
+      Math.floor(selectedCategory.prize_money * 0.6),
+      Math.floor(selectedCategory.prize_money * 0.3),
       0,
       0,
       0
     ];
 
     const prizeWon = prizes[userRank - 1] || 0;
-    const netEarnings = prizeWon - category.entry_fee;
+    const netEarnings = prizeWon - selectedCategory.entry_fee;
 
     const { error: resultError } = await supabase
       .from('competition_results')
       .insert({
         user_id: profile.id,
         user_vehicle_id: userVehicle.id,
-        category_id: category.id,
+        category_id: selectedCategory.id,
         user_spl: userSPL,
         user_rank: userRank,
         prize_won: prizeWon,
@@ -136,7 +139,7 @@ export default function Competition({ profile, onProfileUpdate }: CompetitionPro
       console.error('Error saving competition result:', resultError);
     }
 
-    const newCash = profile.cash - category.entry_fee + prizeWon;
+    const newCash = profile.cash - selectedCategory.entry_fee + prizeWon;
     const newWins = userRank === 1 ? profile.competition_wins + 1 : profile.competition_wins;
     const newEarnings = profile.total_earnings + netEarnings;
 
@@ -159,7 +162,7 @@ export default function Competition({ profile, onProfileUpdate }: CompetitionPro
     }
 
     setResults({
-      name: category.name,
+      name: selectedCategory.name,
       spl: userSPL,
       rank: userRank,
       prize: prizeWon,
@@ -245,19 +248,14 @@ export default function Competition({ profile, onProfileUpdate }: CompetitionPro
     );
   }
 
-  if (competing) {
+  if (competing && selectedCategory) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-slate-800 rounded-xl p-8 border border-slate-700 text-center">
-          <h2 className="text-3xl font-bold text-white mb-6">Competition in Progress...</h2>
-          <div className="flex justify-center mb-6">
-            <div className="animate-pulse">
-              <Trophy className="w-24 h-24 text-yellow-400" />
-            </div>
-          </div>
-          <p className="text-gray-400 text-lg">Measuring SPL levels...</p>
-        </div>
-      </div>
+      <CompetitionAnimation
+        categoryName={selectedCategory.name}
+        userSPL={userSPL}
+        username={profile.username}
+        onComplete={handleAnimationComplete}
+      />
     );
   }
 
