@@ -101,9 +101,19 @@ export default function VehicleVisualization({
             <stop offset="100%" stopColor="#1e293b" />
           </linearGradient>
 
+          <linearGradient id="doorGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#334155" />
+            <stop offset="100%" stopColor="#0f172a" />
+          </linearGradient>
+
           <linearGradient id="trunkHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#0891b2" stopOpacity="0.8" />
+            <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#0891b2" stopOpacity="1" />
+          </linearGradient>
+
+          <linearGradient id="trunkNormal" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#64748b" />
+            <stop offset="100%" stopColor="#334155" />
           </linearGradient>
 
           <linearGradient id="windowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -183,16 +193,16 @@ export default function VehicleVisualization({
           <>
             <path
               d={paths.doorOpen}
-              fill="url(#bodyGradient)"
-              stroke="#334155"
-              strokeWidth="2"
+              fill="url(#doorGradient)"
+              stroke="#94a3b8"
+              strokeWidth="3"
               className="animate-fade-in"
             />
             <path
               d={paths.trunkOpen}
-              fill={highlightTrunk ? 'url(#trunkHighlight)' : 'url(#bodyGradient)'}
-              stroke={highlightTrunk ? '#06b6d4' : '#334155'}
-              strokeWidth="2.5"
+              fill={highlightTrunk ? 'url(#trunkHighlight)' : 'url(#trunkNormal)'}
+              stroke={highlightTrunk ? '#06b6d4' : '#94a3b8'}
+              strokeWidth="3"
               filter={highlightTrunk ? 'url(#trunkGlow)' : undefined}
               className="animate-fade-in"
             />
@@ -235,9 +245,9 @@ export default function VehicleVisualization({
           <>
             <path
               d={paths.door}
-              fill="url(#bodyGradient)"
-              stroke="#334155"
-              strokeWidth="2"
+              fill="url(#doorGradient)"
+              stroke="#94a3b8"
+              strokeWidth="3"
             />
             {highlightTrunk && (
               <>
@@ -245,7 +255,7 @@ export default function VehicleVisualization({
                   d={paths.trunk}
                   fill="url(#trunkHighlight)"
                   stroke="#06b6d4"
-                  strokeWidth="2.5"
+                  strokeWidth="3"
                   filter="url(#trunkGlow)"
                   className="animate-pulse"
                 />
@@ -253,9 +263,10 @@ export default function VehicleVisualization({
                   x="240"
                   y="127"
                   textAnchor="middle"
-                  fill="#06b6d4"
-                  fontSize="10"
+                  fill="#ffffff"
+                  fontSize="11"
                   fontWeight="bold"
+                  className="drop-shadow-lg"
                 >
                   TRUNK
                 </text>
@@ -264,9 +275,9 @@ export default function VehicleVisualization({
             {!highlightTrunk && (
               <path
                 d={paths.trunk}
-                fill="url(#bodyGradient)"
-                stroke="#334155"
-                strokeWidth="2"
+                fill="url(#trunkNormal)"
+                stroke="#94a3b8"
+                strokeWidth="3"
               />
             )}
           </>

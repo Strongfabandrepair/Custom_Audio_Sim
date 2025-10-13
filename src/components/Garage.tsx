@@ -86,12 +86,22 @@ export default function Garage({ profile, onProfileUpdate }: GarageProps) {
     if (!draggedItem || !vehicle) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * vehicle.trunk_width;
-    const y = ((e.clientY - rect.top) / rect.height) * vehicle.trunk_height;
+    const rawX = ((e.clientX - rect.left) / rect.width) * vehicle.trunk_width;
+    const rawY = ((e.clientY - rect.top) / rect.height) * vehicle.trunk_height;
+
+    const gridSize = 5;
+    const x = Math.round(rawX / gridSize) * gridSize;
+    const y = Math.round(rawY / gridSize) * gridSize;
     const z = draggedItem.position_z;
 
+    const halfWidth = draggedItem.equipment.size_width / 2;
+    const halfHeight = draggedItem.equipment.size_height / 2;
+
+    const clampedX = Math.max(halfWidth, Math.min(vehicle.trunk_width - halfWidth, x));
+    const clampedY = Math.max(halfHeight, Math.min(vehicle.trunk_height - halfHeight, y));
+
     const inBounds = GameEngine.checkBounds(
-      x, y, z,
+      clampedX, clampedY, z,
       draggedItem.equipment.size_width,
       draggedItem.equipment.size_height,
       draggedItem.equipment.size_depth,
@@ -106,7 +116,7 @@ export default function Garage({ profile, onProfileUpdate }: GarageProps) {
 
     const otherEquipment = installedEquipment.filter(item => item.id !== draggedItem.id);
     const hasCollision = GameEngine.checkCollision(
-      x, y, z,
+      clampedX, clampedY, z,
       draggedItem.equipment.size_width,
       draggedItem.equipment.size_height,
       draggedItem.equipment.size_depth,
@@ -122,8 +132,8 @@ export default function Garage({ profile, onProfileUpdate }: GarageProps) {
     const { error } = await supabase
       .from('installed_equipment')
       .update({
-        position_x: Math.round(x),
-        position_y: Math.round(y),
+        position_x: Math.round(clampedX),
+        position_y: Math.round(clampedY),
       })
       .eq('id', draggedItem.id);
 
@@ -360,15 +370,30 @@ export default function Garage({ profile, onProfileUpdate }: GarageProps) {
               </div>
             ) : (
               <div
-                className="relative bg-slate-900 border-2 border-slate-600 rounded-lg overflow-hidden"
-                style={{ height: `${vehicle.trunk_height * scale}px` }}
+                className="relative bg-gradient-to-br from-slate-900 to-slate-950 rounded-lg overflow-hidden"
+                style={{
+                  height: `${vehicle.trunk_height * scale}px`,
+                  border: '4px solid #06b6d4',
+                  boxShadow: '0 0 20px rgba(6, 182, 212, 0.3), inset 0 0 20px rgba(6, 182, 212, 0.1)'
+                }}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
               >
-                <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 opacity-20">
-                  {Array.from({ length: 100 }).map((_, i) => (
-                    <div key={i} className="border border-slate-700"></div>
-                  ))}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage: `
+                      linear-gradient(to right, rgba(148, 163, 184, 0.15) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(148, 163, 184, 0.15) 1px, transparent 1px)
+                    `,
+                    backgroundSize: `${vehicle.trunk_width * scale / 10}px ${vehicle.trunk_height * scale / 10}px`
+                  }}
+                />
+                <div className="absolute top-2 left-2 text-xs text-cyan-400 font-mono bg-slate-900/80 px-2 py-1 rounded">
+                  {vehicle.trunk_width}x{vehicle.trunk_height}cm
+                </div>
+                <div className="absolute top-2 right-2 text-xs text-gray-400 font-mono bg-slate-900/80 px-2 py-1 rounded">
+                  Drag to position
                 </div>
 
                 {installedEquipment.map((item) => (
@@ -377,10 +402,10 @@ export default function Garage({ profile, onProfileUpdate }: GarageProps) {
                     draggable
                     onDragStart={(e) => handleDragStart(e, item)}
                     onClick={() => setSelectedEquipment(selectedEquipment === item.id ? null : item.id)}
-                    className={`absolute cursor-move transition-all ${
+                    className={`absolute cursor-grab active:cursor-grabbing transition-all ${
                       selectedEquipment === item.id
-                        ? 'ring-2 ring-cyan-500 z-10'
-                        : 'hover:ring-2 hover:ring-cyan-400'
+                        ? 'ring-4 ring-cyan-400 z-10 scale-105'
+                        : 'hover:ring-2 hover:ring-cyan-400 hover:scale-102'
                     }`}
                     style={{
                       left: `${(item.position_x / vehicle.trunk_width) * 100}%`,
@@ -388,20 +413,27 @@ export default function Garage({ profile, onProfileUpdate }: GarageProps) {
                       width: `${item.equipment.size_width * scale}px`,
                       height: `${item.equipment.size_height * scale}px`,
                       transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
-                      backgroundColor: 'rgba(6, 182, 212, 0.3)',
-                      border: '2px solid rgb(6, 182, 212)',
+                      backgroundColor: selectedEquipment === item.id ? 'rgba(6, 182, 212, 0.5)' : 'rgba(6, 182, 212, 0.3)',
+                      border: `3px solid ${selectedEquipment === item.id ? '#22d3ee' : '#06b6d4'}`,
+                      boxShadow: selectedEquipment === item.id
+                        ? '0 0 20px rgba(6, 182, 212, 0.6), inset 0 0 10px rgba(6, 182, 212, 0.3)'
+                        : '0 2px 8px rgba(0, 0, 0, 0.3)',
                     }}
                   >
-                    <div className="text-xs text-white p-1 truncate">
+                    <div className="text-xs text-white font-semibold p-1 truncate bg-slate-900/60 rounded">
                       {item.equipment.name}
+                    </div>
+                    <div className="absolute bottom-0 right-0 text-[10px] text-cyan-300 bg-slate-900/80 px-1 rounded-tl">
+                      {item.equipment.size_width}x{item.equipment.size_height}
                     </div>
                   </div>
                 ))}
               </div>
             )}
-            <p className="text-sm text-gray-400 mt-2">
-              Drag and drop equipment to reposition. Click to select.
-            </p>
+            <div className="mt-3 flex items-center justify-between text-sm text-gray-400">
+              <span>💡 Drag equipment to reposition • Click to select • Snaps to 5cm grid</span>
+              <span className="text-cyan-400">{installedEquipment.length} items installed</span>
+            </div>
           </div>
         </div>
 

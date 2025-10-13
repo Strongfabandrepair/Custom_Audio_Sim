@@ -249,12 +249,18 @@ export default function Competition({ profile, onProfileUpdate }: CompetitionPro
     );
   }
 
-  if (competing && selectedCategory) {
+  if (competing && selectedCategory && vehicle) {
+    const systemStats = userVehicle && vehicle ? GameEngine.calculateSystemStats(installedEquipment, userVehicle, vehicle) : null;
+    const glassCheck = systemStats ? GameEngine.checkGlassBreak(userSPL, systemStats) : { glassBroke: false, finalSPL: userSPL };
+
     return (
       <CompetitionAnimation
         categoryName={selectedCategory.name}
         userSPL={userSPL}
         username={profile.username}
+        vehicle={vehicle}
+        installedEquipment={installedEquipment}
+        glassShattered={glassCheck.glassBroke}
         onComplete={handleAnimationComplete}
       />
     );
